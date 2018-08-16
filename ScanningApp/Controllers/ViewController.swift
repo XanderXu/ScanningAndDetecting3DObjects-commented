@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Main view controller for the object scanning UI.
+物体扫瞄UI界面的主控制器.
 */
 
 import UIKit
@@ -85,6 +86,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
         sceneView.session.delegate = self
         
         // Prevent the screen from being dimmed after a while.
+        // 阻止屏幕变暗休眠
         UIApplication.shared.isIdleTimerDisabled = true
         
         let notificationCenter = NotificationCenter.default
@@ -111,7 +113,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
         displayWarningIfInLowPowerMode()
         
         // Make sure the application launches in .startARSession state.
+        // 确保启动状态为.startARSession.
         // Entering this state will run() the ARSession.
+        // 进入该状态将会调用run() 启动 ARSession
         state = .startARSession
     }
     
@@ -120,6 +124,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
         
         // Store the screen center location after the view's bounds did change,
         // so it can be retrieved later from outside the main thread.
+        // 在视图尺寸变化后储存屏幕中心的位置,这样就可以在主线程外使用屏幕中心位置变量.
         screenCenter = sceneView.center
     }
     
@@ -169,6 +174,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
         let message = "Stop testing this scan and add a second scan?"
         self.showAlert(title: title, message: message, buttonTitle: "Yes", showCancel: true) { _ in
             // Save the previously scanned object as the object to be merged into the next scan.
+            // 保存前一个扫瞄过的物体,因为它会被合并到下一次扫瞄中.
             self.referenceObjectToMerge = self.testRun?.referenceObject
             self.state = .startARSession
         }
@@ -192,6 +198,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
     @IBAction func leftButtonTouchAreaTapped(_ sender: Any) {
         // A tap in the extended hit area on the lower left should cause a tap
         //  on the button that is currently visible at that location.
+        // 
         if !loadModelButton.isHidden {
             loadModelButtonTapped(self)
         } else if !flashlightButton.isHidden {
