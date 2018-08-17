@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Navigation bar management for the main view controller.
+管理主控制器上的导航条.
 */
 
 import Foundation

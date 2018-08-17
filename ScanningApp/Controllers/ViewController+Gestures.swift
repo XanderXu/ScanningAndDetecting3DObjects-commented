@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Gesture interaction methods for the main view controller.
+为主控制器提供的,手势交互方法
 */
 
 import UIKit

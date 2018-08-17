@@ -290,7 +290,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
             }
             
             // Initiate a share sheet for the scanned object
-            // 初始化分享页面, 用以 分享被扫瞄物体.
+            // 初始化分享页面, 用以分享被扫瞄物体.
             let airdropShareSheet = ShareScanViewController(sourceView: self.nextButton, sharedObject: documentURL)
             DispatchQueue.main.async {
                 self.present(airdropShareSheet, animated: true, completion: nil)

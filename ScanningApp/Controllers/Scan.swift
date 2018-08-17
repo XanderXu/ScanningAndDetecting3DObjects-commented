@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Manages the major steps in scanning an object.
+管理扫瞄物体过程中的主要步骤.
 */
 
 import Foundation
@@ -22,6 +23,7 @@ class Scan {
     }
     
     // The current state the scan is in
+    // 当前扫瞄所处的状态
     private var stateValue: State = .ready
     var state: State {
         get {
@@ -29,6 +31,7 @@ class Scan {
         }
         set {
             // Check that preconditions for the state change are met.
+            // 检查是否已经达到了先决条件，达到条件后再改变状态。
             switch newValue {
             case .ready:
                 break
@@ -54,6 +57,8 @@ class Scan {
             case .scanning:
                 // When entering the scanning state, take a screenshot of the object to be scanned.
                 // This screenshot will later be saved in the *.arobject file
+                // 当进入扫瞄状态时,对被扫瞄物体进行截屏.
+                // 这张截屏图片将会在稍后,被储存到*.arobject文件中.
                 createScreenshot()
             case .adjustingOrigin where stateValue == .scanning && qualityIsLow:
                 let title = "Not enough detail"
@@ -81,6 +86,7 @@ class Scan {
                 break
             }
             // Apply the new state
+            // 应用新状态
             stateValue = newValue
 
             NotificationCenter.default.post(name: Scan.stateChangedNotification,
@@ -98,12 +104,15 @@ class Scan {
     }
     
     // The object which we want to scan
+    // 我们想要扫瞄的物体
     private(set) var scannedObject: ScannedObject
     
     // The result of this scan, an ARReferenceObject
+    // 本次扫瞄的结果,一个ARReferenceObject
     private(set) var scannedReferenceObject: ARReferenceObject?
     
     // The node for visualizing the point cloud.
+    // 用来将点云进行可视化的节点.
     private(set) var pointCloud: ScannedPointCloud
     
     private var sceneView: ARSCNView
@@ -317,6 +326,7 @@ class Scan {
         if state == .ready || state == .defineBoundingBox {
             if let points = frame.rawFeaturePoints {
                 // Automatically adjust the size of the bounding box.
+                // 自动调整边界盒子的尺寸.
                 self.scannedObject.fitOverPointCloud(points)
             }
         }
@@ -332,10 +342,12 @@ class Scan {
             
             // Try a preliminary creation of the reference object based off the current
             // bounding box & update the point cloud visualization based on that.
+            // 尝试根据当前边界盒来初步创建参考物体,并据些更新点云的可视化.
             if let boundingBox = scannedObject.eitherBoundingBox {
                 // Note: Creating the reference object is asynchronous and likely
                 //       takes some time to complete. Avoid calling it again while we
                 //       still wait for the previous call to complete.
+                // 注意: 创建参考物体是异步的,很可能会花费一些时间来完成.避免在上一次调用未完成时,再调用一次.
                 if !isBusyCreatingReferenceObject {
                     isBusyCreatingReferenceObject = true
                     sceneView.session.createReferenceObject(transform: boundingBox.simdWorldTransform,
@@ -343,6 +355,7 @@ class Scan {
                                                             extent: boundingBox.extent) { object, error in
                         if let referenceObject = object {
                             // Pass the feature points to the point cloud visualization.
+                            // 将特征点传递给点云可视化中.
                             self.pointCloud.update(referenceObject.rawFeaturePoints, for: boundingBox)
                         }
                         self.isBusyCreatingReferenceObject = false
@@ -352,6 +365,7 @@ class Scan {
         }
         
         // Update bounding box side coloring to visualize scanning coverage
+        // 更新边界盒的面的颜色,以显示扫瞄进度.
         if state == .scanning {
             scannedObject.boundingBox?.highlightCurrentTile()
             scannedObject.boundingBox?.updateCapturingProgress()
@@ -380,10 +394,13 @@ class Scan {
         
         // The bounding box should not be too small and not too large.
         // Note: 3D object detection is optimized for tabletop scenarios.
+        // 边界盒不应该太小也不应该太大.
+        // 注意: 3D物体检测为桌面场景做了专门优化.
         let validSizeRange: ClosedRange<Float> = 0.01...5.0
         if validSizeRange.contains(boundingBox.extent.x) && validSizeRange.contains(boundingBox.extent.y) &&
             validSizeRange.contains(boundingBox.extent.z) {
             // Check that the volume of the bounding box is at least 500 cubic centimeters.
+            // 检查边界盒的体积,至少有500立方厘米.
             let volume = boundingBox.extent.x * boundingBox.extent.y * boundingBox.extent.z
             return volume >= 0.0005
         }
@@ -400,6 +417,7 @@ class Scan {
         }
         
         // Extract the reference object based on the position & orientation of the bounding box.
+        // 根据边界盒的位置和朝向抽取出参考物体.
         sceneView.session.createReferenceObject(
             transform: boundingBox.simdWorldTransform,
             center: float3(), extent: boundingBox.extent,
@@ -414,9 +432,11 @@ class Scan {
                         ViewController.instance?.referenceObjectToMerge = nil
                         
                         // Show activity indicator during the merge.
+                        // 在合并期间展示活动指示器.
                         ViewController.instance?.showAlert(title: "", message: "Merging previous scan into this scan...", buttonTitle: nil)
                         
                         // Try to merge the object which was just scanned with the existing one.
+                        // 如果刚才扫瞄的物体是已经存在的,尝试合并.
                         self.scannedReferenceObject?.mergeInBackground(with: referenceObjectToMerge, completion: { (mergedObject, error) in
                             var title: String
                             var message: String
@@ -439,6 +459,7 @@ class Scan {
                             }
                             
                             // Hide activity indicator and inform the user about the result of the merge.
+                            // 隐藏活动指示器,并通知用户合并的结果.
                             ViewController.instance?.dismiss(animated: true) {
                                 ViewController.instance?.showAlert(title: title, message: message, buttonTitle: "OK", showCancel: false)
                             }

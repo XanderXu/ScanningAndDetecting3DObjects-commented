@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Management of the UI steps for scanning an object in the main view controller.
+管理主控制器中，扫瞄物体时的UI步骤
 */
 
 import Foundation
@@ -20,18 +21,21 @@ extension ViewController {
     
     /// - Tag: ARObjectScanningConfiguration
     // The current state the application is in
+    // 应用当前所处的状态
     var state: State {
         get {
             return self.internalState
         }
         set {
             // 1. Check that preconditions for the state change are met.
+            // 1. 检查是否已经达到了先决条件，达到条件后再改变状态。
             var newState = newValue
             switch newValue {
             case .startARSession:
                 break
             case .notReady:
                 // Immediately switch to .ready if tracking state is normal.
+                // 当追踪状态是normal时，直接切换到.ready 状态.
                 if let camera = self.sceneView.session.currentFrame?.camera {
                     switch camera.trackingState {
                     case .normal:
@@ -44,6 +48,7 @@ extension ViewController {
                 }
             case .scanning:
                 // Immediately switch to .notReady if tracking state is not normal.
+                // 当追踪状态不是normal时,直接切换到.notReady状态.
                 if let camera = self.sceneView.session.currentFrame?.camera {
                     switch camera.trackingState {
                     case .normal:
@@ -62,6 +67,7 @@ extension ViewController {
             }
             
             // 2. Apply changes as needed per state.
+            // 2. 为每个状态应用改变.
             internalState = newState
             
             switch newState {
@@ -78,6 +84,7 @@ extension ViewController {
                 flashlightButton.isHidden = true
                 
                 // Make sure the SCNScene is cleared of any SCNNodes from previous scans.
+                // 确保SCNScene已经清理了先前扫瞄到的所有SCNNodes.
                 sceneView.scene = SCNScene()
                 
                 let configuration = ARObjectScanningConfiguration()
@@ -230,6 +237,7 @@ extension ViewController {
             }
         case .testing:
             // Testing is the last state, show the share sheet at the end.
+            // 测试,是所有状态中的最后一步,在最后展示分享页面.
             createAndShareReferenceObject()
         }
     }
