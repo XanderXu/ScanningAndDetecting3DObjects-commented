@@ -3,17 +3,20 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A custom label that displays instructions for the scanning procedure's current step.
+一个自定义的label,用来展示扫瞄程序当前步骤的说明.
 */
 
 import UIKit
 
 class Message {
     // The title and body of this message
+    // 本消息的标题和内容
     private(set) var text: NSMutableAttributedString
     
     init(_ body: String, title: String? = nil) {
         if let title = title {
             // Make the title bold
+            // 标题加粗
             text = NSMutableAttributedString(string: "\(title)\n\(body)")
             let titleRange = NSRange(location: 0, length: title.count)
             text.addAttribute(.font, value: UIFont.boldSystemFont(ofSize: 17), range: titleRange)

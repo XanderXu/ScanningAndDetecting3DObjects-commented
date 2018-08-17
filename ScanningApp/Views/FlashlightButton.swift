@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A button with two states that toggles the flashlight.
+一个有两种状态的按钮,用来触发闪光灯.
 */
 
 import UIKit
@@ -14,6 +15,7 @@ class FlashlightButton: RoundedButton {
     override var isHidden: Bool {
         didSet {
             // Never show this button if there is no torch on this device.
+            // 如果设备上没有闪光灯,不显示该按钮.
             guard let captureDevice = AVCaptureDevice.default(for: .video), captureDevice.hasTorch else {
                 if !isHidden {
                     isHidden = true
@@ -23,6 +25,7 @@ class FlashlightButton: RoundedButton {
             
             if isHidden {
                 // Toggle the flashlight off when hiding the button.
+                // 当隐藏按钮时,触发闪光灯关闭.
                 toggledOn = false
             }
         }
@@ -31,6 +34,7 @@ class FlashlightButton: RoundedButton {
     override var toggledOn: Bool {
         didSet {
             // Update UI
+            // 更新UI
             if toggledOn {
                 setTitle("Light On", for: [])
                 backgroundColor = .appBlue
@@ -40,6 +44,7 @@ class FlashlightButton: RoundedButton {
             }
             
             // Toggle flashlight
+            // 触发闪光灯
             guard let captureDevice = AVCaptureDevice.default(for: .video), captureDevice.hasTorch else {
                 if toggledOn {
                     toggledOn = false

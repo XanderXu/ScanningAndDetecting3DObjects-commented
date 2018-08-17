@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A custom button that stands out over the camera view in the scanning UI.
+一个自定义按钮, 悬浮在扫瞄UI的相机视图前.
 */
 
 import UIKit
