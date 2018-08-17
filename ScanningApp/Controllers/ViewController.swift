@@ -198,7 +198,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
     @IBAction func leftButtonTouchAreaTapped(_ sender: Any) {
         // A tap in the extended hit area on the lower left should cause a tap
         //  on the button that is currently visible at that location.
-        // 
+        // 点击左下角扩展区域,根据当前按键的显示或隐藏状态来响应点击.
         if !loadModelButton.isHidden {
             loadModelButtonTapped(self)
         } else if !flashlightButton.isHidden {
@@ -256,6 +256,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
                 //    thus the scanned environment is lost when starting a test.
                 // 2. We encourage users to move the scanned object during testing, which invalidates
                 //    the feature point cloud which was captured during scanning.
+                //  删除scan以防止用户从测试状态返回到扫瞄状态,因为:
+                // 1. 测试和扫瞄需要ARSession运行在不同配置下,这样当启动测试状态时,扫瞄出环境就会丢失.
+                // 2. 我们鼓励用户在测试期间移动被扫瞄过的物体,这会让扫瞄期间捕捉到的特征点云变为不可用.
                 self.scan = nil
                 self.displayInstruction(Message("""
                     Test detection of the object from different angles. Consider moving the object to different environments and test there.
@@ -287,6 +290,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
             }
             
             // Initiate a share sheet for the scanned object
+            // 初始化分享页面, 用以 分享被扫瞄物体.
             let airdropShareSheet = ShareScanViewController(sourceView: self.nextButton, sharedObject: documentURL)
             DispatchQueue.main.async {
                 self.present(airdropShareSheet, animated: true, completion: nil)
@@ -365,6 +369,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
                         if reason == .relocalizing {
                             // If ARKit is relocalizing we should abort the current scan
                             // as this can cause unpredictable distortions of the map.
+                            // 如果ARKit正在重定位,我们应该中止当前的扫瞄,因为这样会导致不可预知的地图失真.
                             print("Warning: ARKit is relocalizing")
                             
                             let title = "Warning: Scan may be broken"
@@ -376,6 +381,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
                             
                         } else {
                             // Suggest the user to restart tracking after a while.
+                            // 建议用户在一段时间后重启追踪.
                             startLimitedTrackingTimer()
                         }
                     }
@@ -436,9 +442,11 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
             if state == .testing {
                 
                 // Show activity indicator during the merge.
+                // 在合并期间展示活动指示器.
                 ViewController.instance?.showAlert(title: "", message: "Merging received scan into this scan...", buttonTitle: nil)
                 
                 // Try to merge the object which was just scanned with the existing one.
+                // 如果刚才扫瞄的物体是已经存在的,尝试合并.
                 self.testRun?.referenceObject?.mergeInBackground(with: receivedReferenceObject, completion: { (mergedObject, error) in
                     var title: String
                     var message: String
@@ -460,6 +468,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
                     }
                     
                     // Hide activity indicator and inform the user about the result of the merge.
+                    // 隐藏活动指示器,并通知用户合并的结果.
                     ViewController.instance?.dismiss(animated: true) {
                         ViewController.instance?.showAlert(title: title, message: message, buttonTitle: "OK", showCancel: false)
                     }
@@ -468,6 +477,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
             } else {
                 // Upon completion of a scan, we will try merging
                 // the scan with this ARReferenceObject.
+                // 扫瞄完成后,我们将尝试将scan合并到ARReferenceObject.
                 referenceObjectToMerge = receivedReferenceObject
                 displayMessage("Scan \"\(url.lastPathComponent)\" received. " +
                     "It will be merged with this scan before proceeding to Test mode.", expirationTime: 3.0)
@@ -484,6 +494,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
         guard let percentage = notification.userInfo?[BoundingBox.scanPercentageUserInfoKey] as? Int else { return }
         
         // Switch to the next state if the scan is complete.
+        // 当扫瞄完成后,切换到下个状态.
         if percentage >= 100 {
             switchToNextState()
             return
@@ -510,6 +521,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
         guard let node = notification.object as? ObjectOrigin else { return }
         
         // Display origin position w.r.t. bounding box
+        // 显示边界盒的原点位置.
         let xString = String(format: "x: %.2f", node.position.x)
         let yString = String(format: "y: %.2f", node.position.y)
         let zString = String(format: "z: %.2f", node.position.z)
@@ -528,6 +540,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UI
     
     override var shouldAutorotate: Bool {
         // Lock UI rotation after starting a scan
+        // 开始扫瞄之后,锁定UI旋转.
         if let scan = scan, scan.state != .ready {
             return false
         }
