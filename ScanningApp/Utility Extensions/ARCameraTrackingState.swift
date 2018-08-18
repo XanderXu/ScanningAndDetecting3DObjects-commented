@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Presentation information about the current tracking state.
+弹出关于当前追踪状态的信息.
 */
 
 import Foundation
