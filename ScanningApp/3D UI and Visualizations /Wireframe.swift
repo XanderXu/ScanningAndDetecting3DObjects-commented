@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A visualization of the edges of a 3D box.
+3D盒子边缘的可视化.
 */
 
 import Foundation
@@ -55,6 +56,7 @@ class Wireframe: SCNNode {
     
     private func setup(extent: float3) {
         // Translate and rotate line nodes to the right transforms
+        // 平移并旋转直线节点,到正确的transforms上.
         lineNodes[0].simdLocalTranslate(by: float3(0, -extent.y / 2, -extent.z / 2))
         lineNodes[0].simdLocalRotate(by: simd_quatf(angle: -.pi / 2, axis: .z))
         
@@ -85,6 +87,7 @@ class Wireframe: SCNNode {
         lineNodes[11].simdLocalRotate(by: simd_quatf(angle: -.pi / 2, axis: .x))
         
         // Assign geometries
+        // 赋值给几何体
         lineNodes[0].geometry = cylinder(width: lineThickness, height: extent.x, color: color)
         lineNodes[1].geometry = cylinder(width: lineThickness, height: extent.z, color: color)
         lineNodes[2].geometry = cylinder(width: lineThickness, height: extent.x, color: color)
@@ -107,6 +110,7 @@ class Wireframe: SCNNode {
         }
         
         // Translate and rotate line nodes to the right transforms
+        // 平移并旋转直线节点,到正确的transforms上.
         lineNodes[0].simdPosition = float3(0, -extent.y / 2, -extent.z / 2)
         lineNodes[1].simdPosition = float3(-extent.x / 2, -extent.y / 2, 0)
         lineNodes[2].simdPosition = float3(0, -extent.y / 2, extent.z / 2)
@@ -123,6 +127,7 @@ class Wireframe: SCNNode {
         lineNodes[11].simdPosition = float3(extent.x / 2, extent.y / 2, 0)
         
         // Update the lines's heights
+        // 更新直线的高度
         (lineNodes[0].geometry as? SCNCylinder)?.height = CGFloat(extent.x)
         (lineNodes[1].geometry as? SCNCylinder)?.height = CGFloat(extent.z)
         (lineNodes[2].geometry as? SCNCylinder)?.height = CGFloat(extent.x)
