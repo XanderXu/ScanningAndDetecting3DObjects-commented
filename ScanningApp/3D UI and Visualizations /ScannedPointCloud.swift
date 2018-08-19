@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A visualization of the 3D point cloud data during object scanning.
+在物体扫瞄期间的3D点云数据可视化.
 */
 
 import Foundation
@@ -14,12 +15,15 @@ class ScannedPointCloud: SCNNode, PointCloud {
     private var pointNode = SCNNode()
     
     // The latest known set of points inside the reference object.
+    // 参考物体中最新获知的点的集合.
     private var referenceObjectPoints: [float3] = []
     
     // The set of currently rendered points, in world coordinates.
     // Note: We render them in world coordinates instead of local coordinates to
     //       prevent rendering issues with points jittering e.g. when the
     //       bounding box is rotated.
+    // 当前渲染出的点的集合,世界坐标系中.
+    // 注意:我们在世界坐标系中而不是本地坐标系中渲染他们,是为了防止渲染时出现点抖动问题,例如当边界盒被旋转时.
     private var renderedPoints: [float3] = []
     
     private var boundingBox: BoundingBox?
@@ -67,6 +71,7 @@ class ScannedPointCloud: SCNNode, PointCloud {
     func update(_ pointCloud: ARPointCloud, for boundingBox: BoundingBox) {
         // Convert the points to world coordinates because we display them
         // in world coordinates.
+        // 将点转换到世界坐标系中,因为我们要在世界坐标系中展示他们.
         var pointsInWorld: [float3] = []
         for point in pointCloud.points {
             pointsInWorld.append(boundingBox.simdConvertPosition(point, to: nil))
@@ -88,12 +93,15 @@ class ScannedPointCloud: SCNNode, PointCloud {
         let max = boundingBox.extent / 2
         
         // Abort if the bounding box has no extent yet
+        // 如果边界盒不再扩展,则中止.
         guard max.x > 0 else { return }
         
         // Check which of the reference object's points are still within the bounding box.
         // Note: The creation of the latest ARReferenceObject happens at a lower frequency
         //       than rendering and updates of the bounding box, so some of the points
         //       may no longer be inside of the box.
+        // 检查参考物体的哪些点仍然在边界盒中.
+        // 注意: 最新的ARReferenceObject是以较低频率创建出来的,低于边界盒渲染和更新的频率,所以某些点可能已经不在边界盒里面了.
         for point in referenceObjectPoints {
             let localPoint = boundingBox.simdConvertPosition(point, from: nil)
             if (min.x..<max.x).contains(localPoint.x) &&

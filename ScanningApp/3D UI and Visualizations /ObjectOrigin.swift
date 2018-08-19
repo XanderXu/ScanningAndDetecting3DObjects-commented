@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 An interactive visualization of x/y/z coordinate axes for use in placing the origin/anchor point of a scanned object.
+x/y/z坐标轴的交互可视化,用于放置被扫瞄物体的原点/锚点.
 */
 
 import Foundation
@@ -11,13 +12,14 @@ import ARKit
 
 // Instances of this class represent the origin of the scanned 3D object - both
 // logically as well as visually (as an SCNNode).
+// 这个类的实例对象代表着被扫瞄物体的原点--既是逻辑上的也是视觉上的(正如SCNNode那样).
 class ObjectOrigin: SCNNode {
     
     static let movedOutsideBoxNotification = Notification.Name("ObjectOriginMovedOutsideBoundingBox")
     static let positionChangedNotification = Notification.Name("ObjectOriginPositionChanged")
     
     private let axisLength: Float = 1.0
-    private let axisThickness: Float = 6.0 // Axis thickness in percent of length.
+    private let axisThickness: Float = 6.0 // Axis thickness in percent of length. 轴的厚度,以长度的百分比表示.
     
     private let axisSizeToObjectSizeRatio: Float = 0.25
     private let minAxisSize: Float = 0.05
@@ -37,6 +39,7 @@ class ObjectOrigin: SCNNode {
     var positionHasBeenAdjustedByUser: Bool = false
     
     /// Variables related to current snapping state
+    // 与当前捕捉状态相关的变量.
     internal var isSnappedToSide = false
     internal var isSnappedToBottomCenter = false
     internal var isSnappedTo90DegreeRotation = false
@@ -113,27 +116,33 @@ class ObjectOrigin: SCNNode {
         }
         
         // By default the origin's scale is 1x.
+        // 默认原点的缩放是1x.
         self.simdScale = float3(1.0)
         
         // Compute a good scale for the axes based on the extent of the bouning box,
         // but stay within a reasonable range.
+        //
         var axesScale = min(extent.x, extent.y, extent.z) * axisSizeToObjectSizeRatio
         axesScale = max(min(axesScale, maxAxisSize), minAxisSize)
         
         // Adjust the scale of the axes (not the origin itself!)
+        // 调整坐标轴的缩放倍数(而不是原点本身!)
         xAxis.simdScale = float3(axesScale)
         yAxis.simdScale = float3(axesScale)
         zAxis.simdScale = float3(axesScale)
         
         if let model = customModel {
             // Scale the origin such that the custom 3D model fits into the given extent.
+            // 缩放原点,让自定义3D模型适合给定的尺寸.
             let modelExtent = model.boundingSphere.radius * 2
             let originScale = min(extent.x, extent.y, extent.z) / modelExtent
             
             // Scale the origin itself, so that the scale will be preserved in the *.arobject file.
+            // 缩放原点本身,这样缩放倍数将会被保存在*.arobject文件中.
             self.simdScale = float3(originScale)
             
             // Correct the scale of the axes to be the same size as before
+            // 将被展示坐标轴的缩放,校正为和以前一样.
             xAxis.simdScale *= (1 / originScale)
             yAxis.simdScale *= (1 / originScale)
             zAxis.simdScale *= (1 / originScale)
@@ -144,10 +153,12 @@ class ObjectOrigin: SCNNode {
         // If a 3D model is being displayed, users should be able to change the scale
         // of the origin. This ensures that the scale at which the 3D model is displayed
         // will be preserved in the *.arobject file.
+        // 如果一个3D模型正在被展示中,用户应该能够改变原点的缩放.这保证了被展示3D模型的缩放倍数将会被保存在*.arobject文件中.
         if isDisplayingCustom3DModel {
             self.simdScale *= float3(scale)
             
             // Correct the scale of the axes to be displayed at the same size as before.
+            // 将被展示坐标轴的缩放,校正为和以前一样.
             xAxis.simdScale *= (1 / scale)
             yAxis.simdScale *= (1 / scale)
             zAxis.simdScale *= (1 / scale)
@@ -158,6 +169,7 @@ class ObjectOrigin: SCNNode {
         guard let camera = sceneView.pointOfView else { return }
     
         // Check if the user is starting the drag on one of the axes. If so, drag along that axis.
+        // 检查用户是否开始拖拽某个坐标轴.如果是,沿该轴拖动.
         let hitResults = sceneView.hitTest(screenPos, options: [
             .rootNode: self,
             .boundingBoxOnly: true])
@@ -176,6 +188,7 @@ class ObjectOrigin: SCNNode {
                 var offset = float3()
                 if let hitPos = sceneView.unprojectPointLocal(screenPos, ontoPlane: transform) {
                     // Project the result onto the plane's X axis & transform into world coordinates.
+                    // 将结果投影到平面的X轴,并转换到世界坐标系中.
                     let posOnPlaneXAxis = float4(hitPos.x, 0, 0, 1)
                     let worldPosOnPlaneXAxis = transform * posOnPlaneXAxis
 
@@ -194,6 +207,7 @@ class ObjectOrigin: SCNNode {
         
         if let hitPos = sceneView.unprojectPointLocal(screenPos, ontoPlane: drag.planeTransform) {
             // Project the result onto the plane's X axis & transform into world coordinates.
+            // 将结果投影到平面的X轴,并转换到世界坐标系中.
             let posOnPlaneXAxis = float4(hitPos.x, 0, 0, 1)
             let worldPosOnPlaneXAxis = drag.planeTransform * posOnPlaneXAxis
 
@@ -201,6 +215,7 @@ class ObjectOrigin: SCNNode {
             
             if customModel == nil {
                 // Snap origin to any side of the bounding box and to the bottom center.
+                // 捕捉原点到边界盒的任一个面,并捕捉到底面中心.
                 snapToBoundingBoxSide()
             }
 
@@ -221,6 +236,7 @@ class ObjectOrigin: SCNNode {
     
     func startPlaneDrag(screenPos: CGPoint) {
         // Reposition the origin in the XZ-plane.
+        // 重置原点到XZ-平面上.
         let dragPlane = self.simdWorldTransform
         var offset = float3(0)
         if let hitPos = sceneView.unprojectPoint(screenPos, ontoPlane: dragPlane) {
@@ -257,6 +273,7 @@ class ObjectOrigin: SCNNode {
     
     func flashOrReposition(screenPos: CGPoint) {
         // Check if the user tapped on one of the axes. If so, highlight it.
+        // 检查用户是否点击了某个坐标轴.如果是,高亮它.
         let hitResults = sceneView.hitTest(screenPos, options: [
             .rootNode: self,
             .boundingBoxOnly: true])
@@ -269,6 +286,7 @@ class ObjectOrigin: SCNNode {
         }
         
         // If no axis was hit, reposition the origin in the XZ-plane.
+        // 如果没有命中任何坐标轴,将原点重置在XZ-平面上.
         if let hitPos = sceneView.unprojectPoint(screenPos, ontoPlane: self.simdWorldTransform) {
             self.simdWorldPosition = hitPos
             

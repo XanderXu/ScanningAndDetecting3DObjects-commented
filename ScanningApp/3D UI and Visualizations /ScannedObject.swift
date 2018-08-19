@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A representation of the object being scanned.
+被扫瞄物体的呈现.
 */
 
 import Foundation
@@ -62,6 +63,7 @@ class ScannedObject: SCNNode {
         if let boundingBox = self.boundingBox {
             if !boundingBox.isHit(screenPos: screenPos) {
                 // Perform a hit test against the feature point cloud.
+                // 向特征点云执行命中测试.
                 guard let result = sceneView.smartHitTest(screenPos) else {
                     print("Warning: Failed to find a position for the bounding box.")
                     return
@@ -91,6 +93,7 @@ class ScannedObject: SCNNode {
     func fitOverPointCloud(_ pointCloud: ARPointCloud) {
         // Do the automatic adjustment of the bounding box only if the user
         // hasn't adjusted it yet.
+        // 当用户还未调整过边框,可执行自动调整边框.
         guard let boundingBox = self.boundingBox, !boundingBox.hasBeenAdjustedByUser else { return }
         
         let hitTestResults = sceneView.hitTest(ViewController.instance!.screenCenter, types: .featurePoint)
@@ -108,6 +111,7 @@ class ScannedObject: SCNNode {
     
     func createBoundingBox(screenPos: CGPoint) {
         // Perform a hit test against the feature point cloud.
+        // 向特征点云执行命中测试.
         guard let result = sceneView.smartHitTest(screenPos) else {
             print("Warning: Failed to find a position for the bounding box.")
             return
@@ -118,11 +122,13 @@ class ScannedObject: SCNNode {
         self.addChildNode(boundingBox)
         
         // Set the initial extent of the bounding box based on the distance to the camera.
+        // 根据物体距离相机的距离设置边界盒的初始尺寸.
         let newExtent = Float(result.distance / 3)
         boundingBox.extent = float3(newExtent)
         
         // Set the position of scanned object to a point on the ray which is offset
         // from the hit test result by half of the bounding boxes' extent.
+        //
         let cameraToHit = result.worldTransform.position - sceneView.pointOfView!.simdWorldPosition
         let normalizedDirection = normalize(cameraToHit)
         let boundingBoxOffset = normalizedDirection * newExtent / 2
@@ -137,6 +143,7 @@ class ScannedObject: SCNNode {
     
     private func updateOrCreateGhostBoundingBox() {
         // Perform a hit test against the feature point cloud.
+        // 向特征点云执行命中测试.
         guard let result = sceneView.smartHitTest(ViewController.instance!.screenCenter) else {
             ghostBoundingBox?.removeFromParentNode()
             ghostBoundingBox = nil
@@ -148,6 +155,7 @@ class ScannedObject: SCNNode {
         
         // Set the position of scanned object to a point on the ray which is offset
         // from the hit test result by half of the bounding boxes' extent.
+        // 设置被扫瞄物体的位置到射线上的某个点上,这个点是从命中测试结果处偏移半个边界盒的范围得到的点.
         let cameraToHit = result.worldTransform.position - sceneView.pointOfView!.simdWorldPosition
         let normalizedDirection = normalize(cameraToHit)
         let boundingBoxOffset = normalizedDirection * newExtent / 2
@@ -156,6 +164,7 @@ class ScannedObject: SCNNode {
         if let boundingBox = ghostBoundingBox {
             boundingBox.extent = float3(newExtent)
             // Change the orientation of the bounding box to always face the user.
+            // 改变边界盒的朝向,使其总是面对用户.
             if let currentFrame = sceneView.session.currentFrame {
                 let cameraY = currentFrame.camera.eulerAngles.y
                 rotation = SCNVector4Make(0, 1, 0, cameraY)
@@ -174,6 +183,7 @@ class ScannedObject: SCNNode {
     func moveOriginToBottomOfBoundingBox() {
         // Only move the origin to the bottom of the bounding box if it hasn't been
         // repositioned by the user yet.
+        // 如果边界盒还未被用户重新放置过,只将原点移动到边界盒的底部.
         guard let boundingBox = boundingBox, let origin = self.origin, !origin.positionHasBeenAdjustedByUser else { return }
         origin.simdPosition.y = -boundingBox.extent.y / 2
     }
@@ -185,6 +195,7 @@ class ScannedObject: SCNNode {
         if let boundingBox = boundingBox {
             // Adjust the position of the bounding box to compensate for the
             // move, so that the bounding box stays where it was.
+            // 调整边界盒的位置以补偿运动,这样边界盒仍然呆在原地.
             boundingBox.simdWorldPosition -= offset
         }
     }
@@ -196,6 +207,7 @@ class ScannedObject: SCNNode {
             if boundingBox.simdPosition != float3(0) {
                 // Make sure the position of the ScannedObject and its nested
                 // BoundingBox is always identical.
+                // 确保ScannedObject的位置,与其嵌套的BoundingBox位置始终是一致的.
                 updatePosition(boundingBox.simdWorldPosition)
             }
         } else {
@@ -212,6 +224,7 @@ class ScannedObject: SCNNode {
         boundingBox.hasBeenAdjustedByUser = true
         
         // Correct y position so that the floor of the box remains at the same position.
+        // 纠正y轴位置,让盒子底面保持在同一位置.
         let diffOnY = oldYExtent - boundingBox.extent.y
         boundingBox.simdWorldPosition.y -= diffOnY / 2
     }
