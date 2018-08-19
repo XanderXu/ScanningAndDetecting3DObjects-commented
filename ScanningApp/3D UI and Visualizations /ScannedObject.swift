@@ -128,7 +128,7 @@ class ScannedObject: SCNNode {
         
         // Set the position of scanned object to a point on the ray which is offset
         // from the hit test result by half of the bounding boxes' extent.
-        //
+        // 设置被扫瞄物体的位置到射线上的某个点上,这个点是从命中测试结果处偏移半个边界盒的范围得到的点.
         let cameraToHit = result.worldTransform.position - sceneView.pointOfView!.simdWorldPosition
         let normalizedDirection = normalize(cameraToHit)
         let boundingBoxOffset = normalizedDirection * newExtent / 2
