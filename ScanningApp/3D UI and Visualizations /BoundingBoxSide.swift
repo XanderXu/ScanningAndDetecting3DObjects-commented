@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 Visualizaitons and controls for resizing a bounding box.
+重设边界盒尺寸时的可视化及控制点.
 */
 
 import Foundation
@@ -20,9 +21,11 @@ class BoundingBoxSide: SCNNode {
     }
     
     // The bounding box face that is represented by this node.
+    // 此节点所代表的边界盒的面.
     var face: Position
     
     // The normal vector of this side.
+    // 该面的法向量.
     var normal: float3 {
         switch face {
         case .front, .right, .top: return dragAxis.normal
@@ -31,6 +34,7 @@ class BoundingBoxSide: SCNNode {
     }
     
     // The drag axis for this side.
+    // 该面的拖拽轴.
     var dragAxis: Axis {
         switch face {
         case .left, .right: return Axis.x
@@ -40,17 +44,21 @@ class BoundingBoxSide: SCNNode {
     }
     
     // The size of the entire side.
+    // 整个面的尺寸
     private var size: CGSize = .zero
     
     // The tiles of this side.
+    // 该面的图块数组.
     private(set) var tiles: [Tile] = []
     
     private var color = UIColor.appYellow
     
     // Maximum width or height of a tile. If the size of the side exceeds this value, a new row or column is added.
+    // 图块的宽或高的最大值.如果尺寸超过了这个值,就添加一个新的行或列.
     private var maxTileSize: CGFloat = 0.1
     
     // Maximum number of tiles per row/column
+    // 每行/每列的图块数量最大值.
     private var maxTileCount: Int = 4
     
     private var lineThickness: CGFloat = 0.002
@@ -60,9 +68,11 @@ class BoundingBoxSide: SCNNode {
     private(set) var isBusyUpdatingTiles: Bool = false
     
     // The size of the bounding box side when the tiles were updated the last time.
+    // 当图块上次更新时,边界盒面的尺寸.
     private var sizeOnLastTileUpdate: CGSize = .zero
     
     // Whether the tiles need to be updated.
+    // 图块是否需要被更新.
     private var tilesNeedUpdateForChangedSize: Bool {
         return sizeOnLastTileUpdate != size
     }
@@ -75,6 +85,7 @@ class BoundingBoxSide: SCNNode {
     private var zAxisExtLines = [SCNNode]()
     
     // The completion if this side in range [0,1]
+    // 该面的完成进度,范围[0,1]
     var completion: Float {
         let capturedTiles = tiles.filter { $0.isCaptured }
         return Float(capturedTiles.count) / Float(tiles.count)
@@ -135,6 +146,7 @@ class BoundingBoxSide: SCNNode {
         }
         
         // Update extensions if the size has changed.
+        // 如果尺寸改变了,更新扩展.
         let newSize = size(from: extent)
         if newSize != size {
             size = newSize
@@ -165,12 +177,14 @@ class BoundingBoxSide: SCNNode {
         isBusyUpdatingTiles = true
         
         // Determine number of rows and colums
+        // 确定行数和列数.
         let numRows = min(self.maxTileCount, Int(ceil(self.size.height / self.maxTileSize)))
         let numColumns = min(self.maxTileCount, Int(ceil(self.size.width / self.maxTileSize)))
         
         var newTiles = [Tile]()
         
         // Create updated tiles and lay them out
+        // 创建更新过的图块并布局.
         for row in 0..<numRows {
             for col in 0..<numColumns {
                 let plane = SCNPlane(width: self.size.width / CGFloat(numColumns), height: self.size.height / CGFloat(numRows))
@@ -186,6 +200,7 @@ class BoundingBoxSide: SCNNode {
         }
         
         // Replace the nodes in the scene graph.
+        // 替换场景树中的节点.
         self.tiles.forEach { $0.removeFromParentNode() }
         newTiles.forEach { self.addChildNode($0) }
         self.tiles = newTiles

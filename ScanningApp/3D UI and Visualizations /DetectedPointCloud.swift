@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A visualization the 3D point cloud data in a detected object.
+已检测到物体上的3D点云可视化.
 */
 
 import Foundation
@@ -21,6 +22,7 @@ class DetectedPointCloud: SCNNode, PointCloud {
         super.init()
         
         // Semitransparently visualize the reference object's points.
+        // 半透明呈现参考物体的点.
         let referenceObjectPoints = SCNNode()
         referenceObjectPoints.geometry = createVisualization(for: referenceObjectPointCloud.points,
                                                              color: .appYellow, size: 12)

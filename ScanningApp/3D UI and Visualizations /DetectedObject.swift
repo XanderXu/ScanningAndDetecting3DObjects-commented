@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A visualization of a detected object, using either a loaded 3D asset or a simple bounding box.
+已检测到物体的可视化,用在加载出的3D素材时或简单边界盒时.
 */
 
 import Foundation
@@ -11,7 +12,7 @@ import SceneKit
 
 class DetectedObject: SCNNode {
     
-    var displayDuration: TimeInterval = 1.0 // How long this visualization is displayed in seconds after an update
+    var displayDuration: TimeInterval = 1.0 // How long this visualization is displayed in seconds after an update 更新后展示的时长
     
     private var detectedObjectVisualizationTimer: Timer?
     
@@ -72,9 +73,11 @@ class DetectedObject: SCNNode {
     
     func updateVisualization(newTransform: float4x4, currentPointCloud: ARPointCloud) {
         // Update the transform
+        // 更新变换
         self.simdTransform = newTransform
         
         // Update the point cloud visualization
+        // 更新点云的可视化
         updatePointCloud(currentPointCloud)
         
         if boundingBox == nil {
@@ -86,6 +89,7 @@ class DetectedObject: SCNNode {
         }
         
         // This visualization should only displayed for displayDuration seconds on every update.
+        // 每次更新时,该可视化展示时长应为displayDuration.
         self.detectedObjectVisualizationTimer?.invalidate()
         self.isHidden = false
         self.detectedObjectVisualizationTimer = Timer.scheduledTimer(withTimeInterval: displayDuration, repeats: false) { _ in

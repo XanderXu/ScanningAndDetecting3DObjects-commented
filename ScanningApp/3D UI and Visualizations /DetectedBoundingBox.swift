@@ -3,6 +3,7 @@ See LICENSE folder for this sample’s licensing information.
 
 Abstract:
 A simple visualiation of a 3D bounding box, used when testing detection of a scanned object.
+一个简单的3D边界盒可视化,用在测试扫瞄到的物体时.
 */
 
 import Foundation
