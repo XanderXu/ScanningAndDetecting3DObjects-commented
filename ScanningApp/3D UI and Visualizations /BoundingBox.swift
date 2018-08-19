@@ -110,7 +110,7 @@ class BoundingBox: SCNNode {
             }
             
             // Skip this point if it is an outlier (not at least 3 other points closer than 3 cm)
-            // 如果是异常点,跳过该点(不要那些周围有至少3个点距离小于3cm的点)
+            // 如果是异常点,跳过该点(某个点周围3cm内至少要有3个点的其他点,否则不要该点)
             var nearbyPoints = 0
             for otherPoint in pointCloud.points {
                 if distance(point, otherPoint) < 0.03 {
