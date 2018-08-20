@@ -97,7 +97,7 @@ class BoundingBox: SCNNode {
     }
     
     func fitOverPointCloud(_ pointCloud: ARPointCloud, focusPoint: float3?) {
-        var filteredPoints: [vector_float3] = []
+        var filteredPoints: [float3] = []
         
         for point in pointCloud.points {
             if let focus = focusPoint {
@@ -351,7 +351,7 @@ class BoundingBox: SCNNode {
         // is used to hit test against bounding box tiles. The ray's length allows for
         // intersections if the user is no more than five meters away from the bounding box.
         // 创建一个新的命中测试射线.该线段起点是发出点(相机),终点则是命中边界盒图块的点.射线的长度决定了能否交互:如果用户距离边界盒超过五米,则不允许交互.
-        let ray = Ray(from: camera, length: 5.0)
+        let ray = Ray(normalFrom: camera, length: 5.0)
         
         for (_, side) in self.sides {
             for tile in side.tiles where tile.isHighlighted {
@@ -385,7 +385,7 @@ class BoundingBox: SCNNode {
             // is used to hit test against bounding box tiles. The ray's length allows for
             // intersections if the user is no more than five meters away from the bounding box.
             // 创建一个新的命中测试射线.该线段起点是发出点(相机),终点则是命中边界盒图块的点.射线的长度决定了能否交互:如果用户距离边界盒超过五米,则不允许交互.
-            let currentRay = Ray(from: camera, length: 5.0)
+            let currentRay = Ray(normalFrom: camera, length: 5.0)
             
             // Only remember the ray if it hit the bounding box,
             // and the hit location is significantly different from all previous hit locations.
@@ -461,7 +461,7 @@ class BoundingBox: SCNNode {
     private func tile(hitBy ray: Ray) -> (tile: Tile, hitLocation: float3)? {
         // Perform hit test with given ray
         // 以给定的射线执行命中测试.
-        let hitResults = self.sceneView.scene.rootNode.hitTestWithSegment(from: ray.origin, to: ray.direction, options: [
+        let hitResults = self.sceneView.scene.rootNode.hitTestWithSegment(from: ray.origin, to: ray.endPoint, options: [
             .ignoreHiddenNodes: false,
             .boundingBoxOnly: true,
             .searchMode: SCNHitTestSearchMode.all])
@@ -506,8 +506,8 @@ class BoundingBox: SCNNode {
     func tryToAlignWithPlanes(_ anchors: [ARAnchor]) {
         guard !hasBeenAdjustedByUser, ViewController.instance?.scan?.state == .defineBoundingBox else { return }
         
-        let bottomCenter = SCNVector3(x: position.x, y: position.y - extent.y / 2, z: position.z)
-        
+        let bottomCenter = float3(simdPosition.x, simdPosition.y - extent.y / 2, simdPosition.z)
+
         var distanceToNearestPlane = Float.greatestFiniteMagnitude
         var offsetToNearestPlaneOnY: Float = 0
         var planeFound = false
@@ -524,7 +524,7 @@ class BoundingBox: SCNNode {
             
             // Get the position of the bottom center of this bounding box in the plane's coordinate system.
             // 获取平面自身的坐标系中,该边界盒的底面中心的位置.
-            let bottomCenterInPlaneCoords = planeNode.convertPosition(bottomCenter, from: parent)
+            let bottomCenterInPlaneCoords = planeNode.simdConvertPosition(bottomCenter, from: parent)
             
             // Add 10% tolerance to the corners of the plane.
             // 为每个平面的拐角处添加10%的误差.

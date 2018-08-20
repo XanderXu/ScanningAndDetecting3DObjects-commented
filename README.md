@@ -51,10 +51,13 @@ The programming steps to scan and define a reference object that ARKit can use f
 
 ![Screenshots of the five steps in using the sample app to scan a real-world object: prepare, define bounding box, scan, adjust origin, then test and export.](Documentation/ScannerAppUIFlow.png)
 
+* Note: For easy object scanning, use a recent, high-performance iOS device. Scanned objects can be detected on any ARKit-supported device, but the process of creating a high-quality scan is faster and smoother on a high-performance device.
+
+  注意: 使用最新的,高性能的iOS设备可以让物体扫瞄更简单.扫瞄出的物体可以在任何支持ARKit的设备上检测到,但是在高性能设备上,创建高质量扫瞄的过程更快更流畅.
+
 1. **Prepare to scan.** When first run, the app displays a box that roughly estimates the size of whatever real-world objects appear centered in the camera view. Position the object you want to scan on a surface free of other objects (like an empty tabletop). Then move your device so that the object appears centered in the box, and tap the Next button.
 
    **准备扫瞄.**当第一次运行时,app会展示一个盒子,这是对出现在相机视图中间部分的真实物体的粗略估计.将你要扫瞄的物体放在空白的平面上(如一张空桌子上).然后移动你的设备来让物体出现在盒子的中心,然后点击Next按钮.
-
 2. **Define bounding box.** Before scanning, you need to tell the app what region of the world contains the object you want to scan. Drag to move the box around in 3D, or press and hold on a side of the box and then drag to resize it. (Or, if you leave the box untouched, you can move around the object and the app will attempt to automatically fit a box around it.) Make sure the bounding box contains only features of the object you want to scan (not those from the environment it's in), then tap the Scan button.
 
    **定义边界盒.**在扫瞄之前,你需要告诉app你想要扫瞄的物体在哪些区域.可以以3D方式移动边界盒,或者按住拖拽来改变大小.(或者,如果你还没触摸盒子,你可以围绕物体移动,app会自动尝试调整边界盒来包围物体)确保边界盒只包含那些你想要扫瞄的特征(不要包含外界环境中的物体),然后点击Scan按钮.
@@ -142,10 +145,6 @@ For best results with object scanning and detection, follow these tips:
 
   当检测时的灯光条件与扫瞄原始物体时的灯光条件相似时,检测起来更顺利.稳定的室内灯光效果更好.
 
-- High-quality object scanning requires peak device performance. Reference objects scanned with a recent, high-performance iOS device work well for detection on all ARKit-supported devices.
-
-  高质量的物体扫瞄需要高性能设备.用最新款的,高性能iOS设备在识别时效果也会更好.
-
 [31]:https://developer.apple.com/documentation/arkit/arworldtrackingconfiguration
 [32]:https://developer.apple.com/documentation/arkit/arsession
 [33]:https://developer.apple.com/documentation/arkit/arobjectanchor
@@ -187,8 +186,7 @@ sceneView.session.createReferenceObject(
     completionHandler: { object, error in
         if let referenceObject = object {
             // Adjust the object's origin with the user-provided transform.
-            self.scannedReferenceObject =
-                referenceObject.applyingTransform(origin.simdTransform)
+            self.scannedReferenceObject = referenceObject.applyingTransform(origin.simdTransform)
             self.scannedReferenceObject!.name = self.scannedObject.scanName
             
             if let referenceObjectToMerge = ViewController.instance?.referenceObjectToMerge {
@@ -199,32 +197,31 @@ sceneView.session.createReferenceObject(
                 
                 // Try to merge the object which was just scanned with the existing one.
                 self.scannedReferenceObject?.mergeInBackground(with: referenceObjectToMerge, completion: { (mergedObject, error) in
-                    var title: String
-                    var message: String
-                    
+
                     if let mergedObject = mergedObject {
                         mergedObject.name = self.scannedReferenceObject?.name
                         self.scannedReferenceObject = mergedObject
+                        ViewController.instance?.showAlert(title: "Merge successful",
+                                                           message: "The previous scan has been merged into this scan.", buttonTitle: "OK")
+                        creationFinished(self.scannedReferenceObject)
 
-                        title = "Merge successful"
-                        message = "The previous scan has been merged into this scan."
-                        
                     } else {
                         print("Error: Failed to merge scans. \(error?.localizedDescription ?? "")")
-                        title = "Merge failed"
-                        message = """
+                        let message = """
                                 Merging the previous scan into this scan failed. Please make sure that
                                 there is sufficient overlap between both scans and that the lighting
                                 environment hasn't changed drastically.
+                                Which scan do you want to use for testing?
                                 """
+                        let thisScan = UIAlertAction(title: "Use This Scan", style: .default) { _ in
+                            creationFinished(self.scannedReferenceObject)
+                        }
+                        let previousScan = UIAlertAction(title: "Use Previous Scan", style: .default) { _ in
+                            self.scannedReferenceObject = referenceObjectToMerge
+                            creationFinished(self.scannedReferenceObject)
+                        }
+                        ViewController.instance?.showAlert(title: "Merge failed", message: message, actions: [thisScan, previousScan])
                     }
-                    
-                    // Hide activity indicator and inform the user about the result of the merge.
-                    ViewController.instance?.dismiss(animated: true) {
-                        ViewController.instance?.showAlert(title: title, message: message, buttonTitle: "OK", showCancel: false)
-                    }
-
-                    creationFinished(self.scannedReferenceObject)
                 })
             } else {
                 creationFinished(self.scannedReferenceObject)

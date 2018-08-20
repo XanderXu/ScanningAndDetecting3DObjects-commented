@@ -15,7 +15,7 @@ class ThresholdPanGestureRecognizer: UIPanGestureRecognizer {
     // 屏幕像素阈值,超过后手势都会被检测到.
     private static var threshold: CGFloat = 30
     
-    /// Indicates whether the currently active gesture has exceeded the threshold.
+    /// Indicates whether the currently active gesture has exceeeded the threshold.
     // 指示当前活跃的手势是否已超过了阈值.
     private(set) var isThresholdExceeded = false
     

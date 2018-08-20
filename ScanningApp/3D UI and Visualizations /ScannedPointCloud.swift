@@ -13,10 +13,15 @@ import SceneKit
 class ScannedPointCloud: SCNNode, PointCloud {
     
     private var pointNode = SCNNode()
+    private var preliminaryPointsNode = SCNNode()
     
     // The latest known set of points inside the reference object.
     // 参考物体中最新获知的点的集合.
     private var referenceObjectPoints: [float3] = []
+    
+    // The current frame's set of points inside the reference object.
+    // 参考物体的当前帧中的点的集合
+    private var currentFramePoints: [float3] = []
     
     // The set of currently rendered points, in world coordinates.
     // Note: We render them in world coordinates instead of local coordinates to
@@ -26,12 +31,20 @@ class ScannedPointCloud: SCNNode, PointCloud {
     // 注意:我们在世界坐标系中而不是本地坐标系中渲染他们,是为了防止渲染时出现点抖动问题,例如当边界盒被旋转时.
     private var renderedPoints: [float3] = []
     
+    // The set of points from the current frame, in world coordinates.
+    // Note: These are preliminary since not all of them might be added
+    //       to the reference object.
+    // 当前帧中点的集合,世界坐标系中.
+    // 注意: 这里只是初步的操作,因为并不是所有的点都会被加到参考物体上.
+    private var renderedPreliminaryPoints: [float3] = []
+    
     private var boundingBox: BoundingBox?
     
     override init() {
         super.init()
         
         addChildNode(pointNode)
+        addChildNode(preliminaryPointsNode)
         
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(self.scanningStateChanged(_:)),
@@ -68,7 +81,7 @@ class ScannedPointCloud: SCNNode, PointCloud {
         self.boundingBox = boundingBox
     }
     
-    func update(_ pointCloud: ARPointCloud, for boundingBox: BoundingBox) {
+    func update(with pointCloud: ARPointCloud, localFor boundingBox: BoundingBox) {
         // Convert the points to world coordinates because we display them
         // in world coordinates.
         // 将点转换到世界坐标系中,因为我们要在世界坐标系中展示他们.
@@ -80,38 +93,36 @@ class ScannedPointCloud: SCNNode, PointCloud {
         self.referenceObjectPoints = pointsInWorld
     }
     
+    func update(with pointCloud: ARPointCloud) {
+        self.currentFramePoints = pointCloud.points
+    }
+    
     func updateOnEveryFrame() {
         guard !self.isHidden else { return }
         guard !referenceObjectPoints.isEmpty, let boundingBox = boundingBox else {
             self.pointNode.geometry = nil
+            self.preliminaryPointsNode.geometry = nil
             return
         }
         
         renderedPoints = []
-        
-        let min = -boundingBox.extent / 2
-        let max = boundingBox.extent / 2
+        renderedPreliminaryPoints = []
         
         // Abort if the bounding box has no extent yet
         // 如果边界盒不再扩展,则中止.
-        guard max.x > 0 else { return }
+        guard boundingBox.extent.x > 0 else { return }
         
-        // Check which of the reference object's points are still within the bounding box.
+        // Check which of the reference object's points and current frame's points are within the bounding box.
         // Note: The creation of the latest ARReferenceObject happens at a lower frequency
         //       than rendering and updates of the bounding box, so some of the points
         //       may no longer be inside of the box.
-        // 检查参考物体的哪些点仍然在边界盒中.
+        // 检查参考物体的哪些点以及当前帧的哪些点位于边界盒中.
         // 注意: 最新的ARReferenceObject是以较低频率创建出来的,低于边界盒渲染和更新的频率,所以某些点可能已经不在边界盒里面了.
-        for point in referenceObjectPoints {
-            let localPoint = boundingBox.simdConvertPosition(point, from: nil)
-            if (min.x..<max.x).contains(localPoint.x) &&
-                (min.y..<max.y).contains(localPoint.y) &&
-                (min.z..<max.z).contains(localPoint.z) {
-                renderedPoints.append(point)
-            }
-        }
+        renderedPoints = referenceObjectPoints.filter { boundingBox.contains($0) }
+        renderedPreliminaryPoints = currentFramePoints.filter { boundingBox.contains($0) }
         
         self.pointNode.geometry = createVisualization(for: renderedPoints, color: .appYellow, size: 12)
+        self.preliminaryPointsNode.geometry = createVisualization(for: renderedPreliminaryPoints, color: .appLightYellow, size: 12)
     }
     
     var count: Int {

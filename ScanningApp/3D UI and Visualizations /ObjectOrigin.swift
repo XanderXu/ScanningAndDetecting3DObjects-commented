@@ -119,9 +119,9 @@ class ObjectOrigin: SCNNode {
         // 默认原点的缩放是1x.
         self.simdScale = float3(1.0)
         
-        // Compute a good scale for the axes based on the extent of the bouning box,
+        // Compute a good scale for the axes based on the extent of the bounding box,
         // but stay within a reasonable range.
-        //
+        // 根据边界盒的尺寸,计算出一个合适的坐标轴缩放倍数,同时要注意在合理的取值范围内.
         var axesScale = min(extent.x, extent.y, extent.z) * axisSizeToObjectSizeRatio
         axesScale = max(min(axesScale, maxAxisSize), minAxisSize)
         

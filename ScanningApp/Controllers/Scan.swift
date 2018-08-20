@@ -14,6 +14,7 @@ class Scan {
     
     static let stateChangedNotification = Notification.Name("ScanningStateChanged")
     static let stateUserInfoKey = "ScanState"
+    static let objectCreationInterval: CFTimeInterval = 1.0
     
     enum State {
         case ready
@@ -122,6 +123,10 @@ class Scan {
     private(set) var screenshot = UIImage()
     
     private var hasWarnedAboutLowLight = false
+    
+    private var isFirstScan: Bool {
+        return ViewController.instance?.referenceObjectToMerge == nil
+    }
     
     static let minFeatureCount = 100
     
@@ -333,7 +338,7 @@ class Scan {
         
         if state == .ready || state == .defineBoundingBox || state == .scanning {
             
-            if let lightEstimate = frame.lightEstimate, lightEstimate.ambientIntensity < 500, !hasWarnedAboutLowLight {
+            if let lightEstimate = frame.lightEstimate, lightEstimate.ambientIntensity < 500, !hasWarnedAboutLowLight, isFirstScan {
                 hasWarnedAboutLowLight = true
                 let title = "Too dark for scanning"
                 let message = "Consider moving to an environment with more light."
@@ -344,11 +349,16 @@ class Scan {
             // bounding box & update the point cloud visualization based on that.
             // 尝试根据当前边界盒来初步创建参考物体,并据些更新点云的可视化.
             if let boundingBox = scannedObject.eitherBoundingBox {
-                // Note: Creating the reference object is asynchronous and likely
-                //       takes some time to complete. Avoid calling it again while we
-                //       still wait for the previous call to complete.
-                // 注意: 创建参考物体是异步的,很可能会花费一些时间来完成.避免在上一次调用未完成时,再调用一次.
-                if !isBusyCreatingReferenceObject {
+                // Note: Create a new preliminary reference object in regular intervals.
+                //       Creating the reference object is asynchronous and likely
+                //       takes some time to complete. Avoid calling it again before
+                //       enough time has passed and while we still wait for the
+                //       previous call to complete.
+                // 注意: 创建一个新的初步的参考物体需要一定时间.
+                //      创建参考物体是异步的,很可能会花费一些时间来完成.避免在上一次调用未完成时,再调用一次.
+                let now = CACurrentMediaTime()
+                if now - timeOfLastReferenceObjectCreation > Scan.objectCreationInterval, !isBusyCreatingReferenceObject {
+                    timeOfLastReferenceObjectCreation = now
                     isBusyCreatingReferenceObject = true
                     sceneView.session.createReferenceObject(transform: boundingBox.simdWorldTransform,
                                                             center: float3(),
@@ -356,10 +366,16 @@ class Scan {
                         if let referenceObject = object {
                             // Pass the feature points to the point cloud visualization.
                             // 将特征点传递给点云可视化中.
-                            self.pointCloud.update(referenceObject.rawFeaturePoints, for: boundingBox)
+                            self.pointCloud.update(with: referenceObject.rawFeaturePoints, localFor: boundingBox)
                         }
                         self.isBusyCreatingReferenceObject = false
                     }
+                }
+                
+                // Update the point cloud with the current frame's points as well
+                // 更新点云,同时更新当前帧的点.
+                if let currentPoints = frame.rawFeaturePoints {
+                    pointCloud.update(with: currentPoints)
                 }
             }
         }
@@ -374,6 +390,8 @@ class Scan {
         scannedObject.updateOnEveryFrame()
         pointCloud.updateOnEveryFrame()
     }
+    
+    var timeOfLastReferenceObjectCreation = CACurrentMediaTime()
     
     var qualityIsLow: Bool {
         return pointCloud.count < Scan.minFeatureCount
@@ -424,8 +442,7 @@ class Scan {
             completionHandler: { object, error in
                 if let referenceObject = object {
                     // Adjust the object's origin with the user-provided transform.
-                    self.scannedReferenceObject =
-                        referenceObject.applyingTransform(origin.simdTransform)
+                    self.scannedReferenceObject = referenceObject.applyingTransform(origin.simdTransform)
                     self.scannedReferenceObject!.name = self.scannedObject.scanName
                     
                     if let referenceObjectToMerge = ViewController.instance?.referenceObjectToMerge {
@@ -438,33 +455,31 @@ class Scan {
                         // Try to merge the object which was just scanned with the existing one.
                         // 如果刚才扫瞄的物体是已经存在的,尝试合并.
                         self.scannedReferenceObject?.mergeInBackground(with: referenceObjectToMerge, completion: { (mergedObject, error) in
-                            var title: String
-                            var message: String
-                            
+
                             if let mergedObject = mergedObject {
                                 mergedObject.name = self.scannedReferenceObject?.name
                                 self.scannedReferenceObject = mergedObject
+                                ViewController.instance?.showAlert(title: "Merge successful",
+                                                                   message: "The previous scan has been merged into this scan.", buttonTitle: "OK")
+                                creationFinished(self.scannedReferenceObject)
 
-                                title = "Merge successful"
-                                message = "The previous scan has been merged into this scan."
-                                
                             } else {
                                 print("Error: Failed to merge scans. \(error?.localizedDescription ?? "")")
-                                title = "Merge failed"
-                                message = """
+                                let message = """
                                         Merging the previous scan into this scan failed. Please make sure that
                                         there is sufficient overlap between both scans and that the lighting
                                         environment hasn't changed drastically.
+                                        Which scan do you want to use for testing?
                                         """
+                                let thisScan = UIAlertAction(title: "Use This Scan", style: .default) { _ in
+                                    creationFinished(self.scannedReferenceObject)
+                                }
+                                let previousScan = UIAlertAction(title: "Use Previous Scan", style: .default) { _ in
+                                    self.scannedReferenceObject = referenceObjectToMerge
+                                    creationFinished(self.scannedReferenceObject)
+                                }
+                                ViewController.instance?.showAlert(title: "Merge failed", message: message, actions: [thisScan, previousScan])
                             }
-                            
-                            // Hide activity indicator and inform the user about the result of the merge.
-                            // 隐藏活动指示器,并通知用户合并的结果.
-                            ViewController.instance?.dismiss(animated: true) {
-                                ViewController.instance?.showAlert(title: title, message: message, buttonTitle: "OK", showCancel: false)
-                            }
-
-                            creationFinished(self.scannedReferenceObject)
                         })
                     } else {
                         creationFinished(self.scannedReferenceObject)

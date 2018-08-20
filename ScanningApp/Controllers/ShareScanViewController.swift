@@ -24,4 +24,12 @@ class ShareScanViewController: UIActivityViewController {
                                       .copyToPasteboard, .postToTencentWeibo, .postToWeibo,
                                       .postToVimeo, .postToFlickr, .postToTwitter, .postToFacebook]
     }
+    
+    deinit {
+        // Restart the session in case it was interrupted by the share sheet
+        if let configuration = ViewController.instance?.sceneView.session.configuration,
+            ViewController.instance?.state == .testing {
+            ViewController.instance?.sceneView.session.run(configuration)
+        }
+    }
 }
